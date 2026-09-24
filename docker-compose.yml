@@ -1,0 +1,26 @@
+services:
+  trocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trocr-iam:local
+    platform: linux/amd64
+    init: true
+    ports:
+      - "127.0.0.1:${JUPYTER_PORT:-8888}:8888"
+    volumes:
+      - .:/home/mambauser/workspace
+      - huggingface-cache:/home/mambauser/.cache/huggingface
+    shm_size: "8gb"
+    environment:
+      IAM_DATA_DIR: /home/mambauser/workspace/data/IAM
+      TROCR_OUTPUT_DIR: /home/mambauser/workspace/outputs
+    healthcheck:
+      test: ["CMD", "micromamba", "run", "-n", "trocr", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/login', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+volumes:
+  huggingface-cache:
