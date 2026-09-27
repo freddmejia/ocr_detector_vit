@@ -1,7 +1,7 @@
 # TrOCR sobre IAM con Docker
 
 Entorno para el [cuaderno de Niels Rogge](https://github.com/NielsRogge/Transformers-Tutorials/blob/master/TrOCR/Fine_tune_TrOCR_on_IAM_Handwriting_Database_using_Seq2SeqTrainer.ipynb).
-Incluye JupyterLab, Python 3.11, PyTorch 2.6.0 (CUDA 12.4), Transformers 4.44.2,
+Incluye JupyterLab, Python 3.11, PyTorch 2.7.1 (CUDA 12.8), Transformers 4.44.2,
 Datasets 2.21.0 y Accelerate. Las versiones de Transformers y Datasets conservan
 las API que utiliza el cuaderno (`evaluation_strategy`, `load_metric` y
 `processor.feature_extractor`). Las dependencias transitivas no están bloqueadas.
@@ -79,7 +79,7 @@ Abre la dirección `http://localhost:8888/lab?token=...` que aparece en los logs
 Jupyter genera un token al iniciar. Para consultar el enlace después:
 
 ```bash
-docker compose exec trocr jupyter server list
+docker compose exec trocr micromamba run -n trocr jupyter server list
 ```
 
 Abre `notebooks/TrOCR_IAM.ipynb` y selecciona el kernel **Python (TrOCR)**.
@@ -96,7 +96,7 @@ y métricas descargados persisten en el volumen `huggingface-cache`.
 
 ## Entrenar con GPU NVIDIA
 
-Necesitas una GPU NVIDIA y un controlador compatible con CUDA 12.4. En Windows,
+Necesitas una GPU NVIDIA y un controlador compatible con CUDA 12.8. En Windows,
 usa el backend WSL2 de Docker Desktop con acceso a la GPU. En Linux, configura
 NVIDIA Container Toolkit para Docker.
 
@@ -107,8 +107,24 @@ docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 Comprueba el acceso desde otra terminal:
 
 ```bash
-docker compose exec trocr python -c "import torch; print('CUDA:', torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+docker compose exec trocr micromamba run -n trocr python -c "import torch; print(torch.__version__, torch.version.cuda); print(torch.cuda.get_device_name(0)); x = torch.ones(16, device='cuda'); print((x + x).sum().item()); torch.cuda.synchronize()"
 ```
+
+Esta prueba ejecuta una operación real en la GPU: `torch.cuda.is_available()`
+por sí solo no garantiza que la versión instalada soporte su arquitectura.
+Debe imprimir `2.7.1+cu128`, `12.8`, el nombre de tu GPU y `32.0`.
+
+Si construiste la imagen anterior con PyTorch 2.6 / CUDA 12.4, reconstruye y
+recrea el servicio (guarda antes el cuaderno abierto):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build --force-recreate
+```
+
+Después vuelve a abrir el cuaderno y ejecútalo desde el principio con un kernel
+nuevo. Las RTX 50, incluida la RTX 5060 Ti (`sm_120`), requieren una distribución
+de PyTorch con soporte Blackwell, como la CUDA 12.8 fijada aquí. La combinación
+anterior podía detectar la GPU pero fallaba con `no kernel image is available`.
 
 La configuración básica permite ejecutar en CPU, aunque el entrenamiento es
 mucho más lento. Si falta memoria de GPU, reduce los batch sizes de 8 a 1 o 2
@@ -135,6 +151,7 @@ jupyter lab
 La copia del cuaderno usa las carpetas `data/IAM` y `outputs` del proyecto como
 alternativa cuando no existen las variables de entorno del contenedor.
 
-Referencias: [PyTorch 2.6.0 y CUDA](https://pytorch.org/get-started/previous-versions/#v260),
+Referencias: [PyTorch 2.7.1 y CUDA](https://pytorch.org/get-started/previous-versions/#v271),
+[soporte Blackwell](https://pytorch.org/blog/pytorch-2-7/),
 [métricas en Datasets 2.21](https://huggingface.co/docs/datasets/v2.21.0/how_to_metrics),
 [GPU en Compose](https://docs.docker.com/compose/how-tos/gpu-support/).

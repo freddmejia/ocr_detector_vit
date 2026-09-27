@@ -1,0 +1,33 @@
+OCR
+cómo puedo optimizar con docker o algo para que mi hardware no sobrepase el 70% de cpu/gpu temperatura, imagino que la gpu el uso puede llegar hasta el 95%, pero la temperatura,  ventilador es importante
+porque al final del día es consumo energético
+
+
+1. detector de objetos, entrenar con los datasets de 
+https://huggingface.co/datasets/justjuu/license-plate-detection
+https://huggingface.co/datasets/khaclinh/pp4av
+https://universe.roboflow.com/roboflow-universe-projects/license-plate-recognition-rxg4e
+
+2. entrenar el modelo tcor con placas y texto de placas, este es el ocr
+
+3. probar el pipeline completo
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

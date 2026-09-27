@@ -1,12 +1,14 @@
 FROM mambaorg/micromamba:2.3.2
 
+ENV PIP_NO_CACHE_DIR=1
+
 COPY --chown=$MAMBA_USER:$MAMBA_USER env.yml /tmp/env.yml
 RUN micromamba create --yes --file /tmp/env.yml && \
     micromamba clean --all --yes
 
 ENV ENV_NAME=trocr \
+    PATH=/opt/conda/envs/trocr/bin:$PATH \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
     HF_HOME=/home/mambauser/.cache/huggingface \
     TOKENIZERS_PARALLELISM=false
 
