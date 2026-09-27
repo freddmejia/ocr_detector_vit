@@ -8,3 +8,4 @@ data/**
 outputs/**
 !outputs/.gitkeep
 OCR.txt
+*.pdf

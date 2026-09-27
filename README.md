@@ -190,6 +190,23 @@ checkpoints en `outputs/trocr_placas/checkpoints` y el mejor modelo en
 con las placas reducidas a 100 px. Si falta memoria de GPU, usa batch 8 con
 `gradient_accumulation_steps=2`.
 
+### Placas sin anonimizar (rellenadas)
+
+`notebooks/Rellenar_UC3M-LP.ipynb` (kernel **Python (TrOCR)**) sustituye los
+bloques grises de UC3M-LP por caracteres reales: localiza cada bloque en el
+hueco entre sus caracteres vecinos (zona de color uniforme distinta del fondo) y
+pinta una cifra o letra aleatoria tomada de un banco con los caracteres visibles
+de todas las placas, adaptada a la altura, colores, nitidez e inclinación de la
+placa. La etiqueta recibe ese carácter, así que el texto ya no tiene `*`. Solo
+usa las placas de una fila con formato actual (4 cifras y 3 letras) y descarta
+aquellas en las que no localiza los bloques con seguridad. Genera
+`data/ocr_vehicles/UC3M-LP_ocr_rellenas/` con el mismo formato y las mismas
+placas de validación que `TrOCR_Placas.ipynb`.
+
+Con `USAR_RELLENAS = True` (valor por defecto), `TrOCR_Placas.ipynb` entrena con
+ese dataset y guarda el modelo en `outputs/trocr_placas_rellenas/`. El pipeline
+usa ese modelo si existe y, si no, el de `outputs/trocr_placas/`.
+
 ## Pipeline completo: placa + OCR
 
 `notebooks/Pipeline_Placas_OCR.ipynb` (kernel **Python (RF-DETR)**) une los dos

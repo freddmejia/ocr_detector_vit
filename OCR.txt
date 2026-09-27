@@ -23,8 +23,14 @@ https://aws.amazon.com/es/what-is/transformers-in-artificial-intelligence/
 
 license plate detection yolo
 https://huggingface.co/morsetechlab/yolov11-license-plate-detection
+https://github.com/ankandrew/fast-plate-ocr
 
 
+datasets
+https://github.com/ramajoballester/UC3M-LP/tree/main
+https://github.com/raysonlaroca/rodosol-alpr-dataset
+https://huggingface.co/datasets/sonnetechnology/license-plate-text-recognition-full
+https://gitlab.com/jdbravo/plates-ocr-train
 
 
 
