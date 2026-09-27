@@ -160,13 +160,43 @@ dentro del volumen `huggingface-cache`, sin crear ningún Space.
 Si falta memoria de GPU, reduce `per_device_train_batch_size` de 8 a 4 o 2.
 Para subir el modelo al Hub, pon `PUSH_TO_HUB = True` en la primera celda.
 
+## OCR de placas con UC3M-LP
+
+`notebooks/TrOCR_Placas.ipynb` (kernel **Python (TrOCR)**) adapta el cuaderno de
+IAM para ajustar TrOCR (`microsoft/trocr-base-stage1`) con placas españolas del
+dataset UC3M-LP. Coloca el dataset en `data/ocr_vehicles/UC3M-LP/` con su
+estructura original: `train/` y `test/` (cada imagen con su JSON) y `train.txt`
+y `test.txt`.
+
+La primera ejecución recorta todas las placas (unas 2.500, a partir de 4,4 GB de
+fotos) en `data/ocr_vehicles/UC3M-LP_ocr/`, con margen extra alrededor de cada
+placa, y escribe `train.csv`, `validation.csv` y `test.csv` con el texto y la
+posición de la placa en el recorte. La validación se separa de `train`
+agrupando por placa. UC3M-LP tapa dos caracteres de cada placa con un bloque
+gris; el texto objetivo los marca con `*` (`074*C*V`). El campo `imagePath` de
+los JSON está desplazado una posición, así que el cuaderno toma la imagen con el
+mismo nombre que el JSON. La carpeta `UC3M-LP_crops/` de la versión anterior ya
+no se usa y puedes borrarla.
+
+En entrenamiento, cada placa se aumenta al leerla: margen aleatorio, rotación
+leve, brillo, contraste y color, desenfoque, compresión JPEG y reducción a baja
+resolución (60–200 px de ancho, como las placas del detector). Validación y test
+usan el mismo recorte que el pipeline.
+
+Entrena con batch 16 hasta 40 épocas, evalúa cada época (CER y porcentaje de
+placas exactas) y se detiene si el CER no mejora en 5 épocas. Guarda los
+checkpoints en `outputs/trocr_placas/checkpoints` y el mejor modelo en
+`outputs/trocr_placas/final`. Al final evalúa con `test` a resolución completa y
+con las placas reducidas a 100 px. Si falta memoria de GPU, usa batch 8 con
+`gradient_accumulation_steps=2`.
+
 ## Pipeline completo: placa + OCR
 
 `notebooks/Pipeline_Placas_OCR.ipynb` (kernel **Python (RF-DETR)**) une los dos
 modelos entrenados: lee las imágenes de `data/vehicles`, las normaliza y
 redimensiona para el detector, detecta las placas con
-`outputs/rf_detr_license_plates/final`, recorta cada placa y la lee con TrOCR
-(`outputs/final`). Guarda en `outputs/pipeline/` cada imagen anotada con la caja
+`outputs/rf_detr_license_plates/final`, recorta cada placa y la lee con el TrOCR de placas
+(`outputs/trocr_placas/final`). Guarda en `outputs/pipeline/` cada imagen anotada con la caja
 y el texto, y un `lecturas.csv` con todas las lecturas. La función `leer_placas`
 aplica todo el pipeline a una imagen nueva.
 
@@ -175,9 +205,19 @@ Parámetros en la primera celda: `DET_THRESHOLD` (confianza mínima, 0.4),
 estrechas se dibujan, pero no se leen, porque a esa resolución el OCR solo
 devuelve ruido).
 
-El modelo OCR actual se entrenó con IAM (manuscritos), no con placas, así que
-confunde caracteres. Para mejorar las lecturas hay que ajustar TrOCR con
-recortes de placas y su texto.
+El OCR se entrenó solo con placas españolas: con placas de otros países tenderá
+a leer con el formato español.
+
+Al final del cuaderno, una celda compara TrOCR con
+[fast-plate-ocr](https://github.com/ankandrew/fast-plate-ocr)
+(`cct-s-v2-global-model`, preentrenado con placas de más de 65 países, sin
+ajustar) sobre los mismos recortes, y guarda la tabla y las imágenes anotadas en
+`outputs/pipeline/fast_plate_ocr/`. Usa el paquete `fast-plate-ocr[onnx]` del
+entorno `detr`; en un contenedor ya levantado se puede instalar sin reconstruir:
+
+```bash
+docker compose exec trocr micromamba run -n detr pip install "fast-plate-ocr[onnx]==1.1.0"
+```
 
 ## Parar y configurar
 

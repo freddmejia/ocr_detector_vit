@@ -13,6 +13,7 @@ https://universe.roboflow.com/roboflow-universe-projects/license-plate-recogniti
 3. probar el pipeline completo
 
 
+cuando esto se meta en  el móvil se debe poder hacer zoom y también encender el led porque si no en la oscuridad no se va a detectar nada
 
 
 
@@ -27,7 +28,7 @@ https://huggingface.co/morsetechlab/yolov11-license-plate-detection
 
 
 
-
+al final podemos juntar muchas categorías de cosas en imágenes o una sola para entrenar un modelo [crear una arquitectura propia, mobilenetv3 con encoder decoder, transformer etc] custom mas pequeño y ponerlos en gpus pequeñas asi esto no ocupa mucho procesamiento si no que es liviano y rápido
 
 
 
@@ -37,3 +38,4 @@ docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 
 
 
+al final hay que saber como se leen los datos imágenes/textos que arquitectura se usa, que librerías se usa, porque con mas imágenes funciono mejor, que métricas, porque luego es simplemente usar y nos olvidamos o no entendemos el problema de como se construyo y cuando hayan realmente problemas, como lo resolvemos siempre vamos a estar dependiendo de IA que resuelva todo? no es posible por eso es necesario entender todo, absolutamente todo

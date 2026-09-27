@@ -21,6 +21,8 @@ dependencies:
       - albumentations==2.0.8
       # Visualización de las etapas del pipeline (cuaderno Pipeline_Placas_OCR).
       - matplotlib==3.11.2
+      # OCR de placas preentrenado (+65 países) para comparar en el pipeline; ONNX Runtime en CPU.
+      - fast-plate-ocr[onnx]==1.1.0
       # Kernel para el JupyterLab del entorno trocr (misma versión de ipywidgets).
       - ipykernel==6.29.5
       - ipywidgets==8.1.5
