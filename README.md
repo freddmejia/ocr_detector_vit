@@ -6,6 +6,9 @@ Datasets 2.21.0 y Accelerate. Las versiones de Transformers y Datasets conservan
 las API que utiliza el cuaderno (`evaluation_strategy`, `load_metric` y
 `processor.feature_extractor`). Las dependencias transitivas no están bloqueadas.
 
+La imagen incluye además un segundo entorno para el detector de placas RF-DETR
+(ver [Detector de placas con RF-DETR](#detector-de-placas-con-rf-detr)).
+
 ## Obtener los datos
 
 El cuaderno original presupone que ya dispones de IAM en Google Drive; no lo
@@ -129,6 +132,52 @@ anterior podía detectar la GPU pero fallaba con `no kernel image is available`.
 La configuración básica permite ejecutar en CPU, aunque el entrenamiento es
 mucho más lento. Si falta memoria de GPU, reduce los batch sizes de 8 a 1 o 2
 en `Seq2SeqTrainingArguments`.
+
+## Detector de placas con RF-DETR
+
+`notebooks/RFDETR_License_Plates.ipynb` adapta la guía
+[Object detection](https://huggingface.co/docs/transformers/tasks/object_detection)
+de Transformers: ajusta `Roboflow/rf-detr-medium` con el dataset
+[justjuu/license-plate-detection](https://huggingface.co/datasets/justjuu/license-plate-detection)
+(una sola clase, `license_plate`; 6.176 imágenes de entrenamiento, 1.765 de
+validación y 882 de prueba). Sirve para localizar la placa antes de pasar el
+recorte al OCR.
+
+RF-DETR requiere Transformers 5, incompatible con la versión que necesita el
+cuaderno de TrOCR, así que tiene su propio entorno Conda, `detr`, definido en
+`env-detr.yml` (PyTorch 2.7.1 CUDA 12.8, Transformers 5.17.0, Datasets 5.0.1,
+timm, Albumentations, torchmetrics, pycocotools y trackio). En JupyterLab, abre
+el cuaderno y selecciona el kernel **Python (RF-DETR)**. Este entorno añade unos
+GB a la imagen; reconstrúyela con `docker compose up --build`.
+
+El dataset se descarga en la primera ejecución a la caché de Hugging Face (unos
+240 MB, revisión fijada). El cuaderno entrena con `train`, elige el mejor
+checkpoint con `validation` y evalúa al final con `test`. Los checkpoints y el
+modelo final se guardan en `outputs/rf_detr_license_plates/`. El cuaderno
+muestra las métricas por época (mAP, mAR); además trackio las registra en local,
+dentro del volumen `huggingface-cache`, sin crear ningún Space.
+
+Si falta memoria de GPU, reduce `per_device_train_batch_size` de 8 a 4 o 2.
+Para subir el modelo al Hub, pon `PUSH_TO_HUB = True` en la primera celda.
+
+## Pipeline completo: placa + OCR
+
+`notebooks/Pipeline_Placas_OCR.ipynb` (kernel **Python (RF-DETR)**) une los dos
+modelos entrenados: lee las imágenes de `data/vehicles`, las normaliza y
+redimensiona para el detector, detecta las placas con
+`outputs/rf_detr_license_plates/final`, recorta cada placa y la lee con TrOCR
+(`outputs/final`). Guarda en `outputs/pipeline/` cada imagen anotada con la caja
+y el texto, y un `lecturas.csv` con todas las lecturas. La función `leer_placas`
+aplica todo el pipeline a una imagen nueva.
+
+Parámetros en la primera celda: `DET_THRESHOLD` (confianza mínima, 0.4),
+`CROP_PADDING` (margen del recorte) y `MIN_OCR_WIDTH` (60 px: las placas más
+estrechas se dibujan, pero no se leen, porque a esa resolución el OCR solo
+devuelve ruido).
+
+El modelo OCR actual se entrenó con IAM (manuscritos), no con placas, así que
+confunde caracteres. Para mejorar las lecturas hay que ajustar TrOCR con
+recortes de placas y su texto.
 
 ## Parar y configurar
 

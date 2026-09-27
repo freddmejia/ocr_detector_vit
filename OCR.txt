@@ -16,6 +16,12 @@ https://universe.roboflow.com/roboflow-universe-projects/license-plate-recogniti
 
 
 
+entender mejor los transformadores
+https://aws.amazon.com/es/what-is/transformers-in-artificial-intelligence/
+
+
+license plate detection yolo
+https://huggingface.co/morsetechlab/yolov11-license-plate-detection
 
 
 
@@ -26,7 +32,7 @@ https://universe.roboflow.com/roboflow-universe-projects/license-plate-recogniti
 
 
 
-
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 
 
 
