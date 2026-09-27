@@ -32,6 +32,7 @@ https://github.com/raysonlaroca/rodosol-alpr-dataset
 https://huggingface.co/datasets/sonnetechnology/license-plate-text-recognition-full
 https://gitlab.com/jdbravo/plates-ocr-train
 
+tenemos algo mal en nuestro cuaderno o que pasa, pero la temperatura del procesador sigue subiendo, habrá que darle una limpieza a la cpu?
 
 
 al final podemos juntar muchas categorías de cosas en imágenes o una sola para entrenar un modelo [crear una arquitectura propia, mobilenetv3 con encoder decoder, transformer etc] custom mas pequeño y ponerlos en gpus pequeñas asi esto no ocupa mucho procesamiento si no que es liviano y rápido

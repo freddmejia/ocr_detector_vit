@@ -12,9 +12,19 @@ services:
       - .:/home/mambauser/workspace
       - huggingface-cache:/home/mambauser/.cache/huggingface
     shm_size: "8gb"
+    # Límite de recursos: ~60 % del anfitrión (i7-14700KF: 28 hilos, 64 GB). Ajustable en .env.
+    # La memoria incluye /dev/shm; memswap_limit igual a mem_limit impide usar swap además.
+    cpus: "${CONTAINER_CPUS:-16}"
+    mem_limit: "${CONTAINER_MEMORY:-38g}"
+    memswap_limit: "${CONTAINER_MEMORY:-38g}"
     environment:
       IAM_DATA_DIR: /home/mambauser/workspace/data/IAM
       TROCR_OUTPUT_DIR: /home/mambauser/workspace/outputs
+      # PyTorch, NumPy y OpenCV abren por defecto un hilo por núcleo del anfitrión (28), aunque el
+      # contenedor solo pueda usar CONTAINER_CPUS: se ajustan al límite para no saturarlo.
+      OMP_NUM_THREADS: "${CONTAINER_CPUS:-16}"
+      MKL_NUM_THREADS: "${CONTAINER_CPUS:-16}"
+      OPENBLAS_NUM_THREADS: "${CONTAINER_CPUS:-16}"
     healthcheck:
       test: ["CMD", "micromamba", "run", "-n", "trocr", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/login', timeout=5)"]
       interval: 30s

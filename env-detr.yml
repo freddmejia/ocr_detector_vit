@@ -23,6 +23,10 @@ dependencies:
       - matplotlib==3.11.2
       # OCR de placas preentrenado (+65 países) para comparar en el pipeline; ONNX Runtime en CPU.
       - fast-plate-ocr[onnx]==1.1.0
+      # Exportación de RF-DETR a TFLite (PyTorch -> LiteRT sin TensorFlow). litert-torch 0.9.0 es la última
+      # versión que no exige torchao >= 0.17, incompatible con PyTorch 2.7; torchao 0.12 sí lo es.
+      - litert-torch==0.9.0
+      - torchao==0.12.0
       # Kernel para el JupyterLab del entorno trocr (misma versión de ipywidgets).
       - ipykernel==6.29.5
       - ipywidgets==8.1.5

@@ -160,6 +160,16 @@ dentro del volumen `huggingface-cache`, sin crear ningún Space.
 Si falta memoria de GPU, reduce `per_device_train_batch_size` de 8 a 4 o 2.
 Para subir el modelo al Hub, pon `PUSH_TO_HUB = True` en la primera celda.
 
+La última celda exporta el detector a TFLite (LiteRT) con `litert-torch`, sin
+TensorFlow: `outputs/rf_detr_license_plates/rf_detr_license_plates.tflite`
+(~125 MB, float32). Requiere haber ejecutado antes las celdas de inferencia.
+Entrada: `pixel_values` float32 `[1, 3, 576, 576]` (NCHW, normalizado con la
+media y desviación de ImageNet); salidas: `logits` `[1, 300, 1]` (confianza =
+sigmoide) y `pred_boxes` `[1, 300, 4]` (`cx, cy, w, h` normalizados). La celda
+comprueba con el intérprete de LiteRT que da las mismas detecciones que PyTorch.
+`litert-torch` solo tiene versión para Linux, así que la exportación funciona
+dentro del contenedor, no en Python de Windows.
+
 ## OCR de placas con UC3M-LP
 
 `notebooks/TrOCR_Placas.ipynb` (kernel **Python (TrOCR)**) adapta el cuaderno de
@@ -182,6 +192,12 @@ En entrenamiento, cada placa se aumenta al leerla: margen aleatorio, rotación
 leve, brillo, contraste y color, desenfoque, compresión JPEG y reducción a baja
 resolución (60–200 px de ancho, como las placas del detector). Validación y test
 usan el mismo recorte que el pipeline.
+
+La entrada al modelo es de 192×384 píxeles (`IMAGE_SIZE`) en lugar de los
+384×384 de TrOCR: una placa es ancha, así que se conserva la resolución
+horizontal con la mitad de parches y el codificador tarda la mitad. Los
+*embeddings* de posición del codificador se interpolan al nuevo tamaño al cargar
+el modelo, y el modelo guardado ya lo incluye, así que el pipeline no cambia.
 
 Entrena con batch 16 hasta 40 épocas, evalúa cada época (CER y porcentaje de
 placas exactas) y se detiene si el CER no mejora en 5 épocas. Guarda los
@@ -206,6 +222,20 @@ placas de validación que `TrOCR_Placas.ipynb`.
 Con `USAR_RELLENAS = True` (valor por defecto), `TrOCR_Placas.ipynb` entrena con
 ese dataset y guarda el modelo en `outputs/trocr_placas_rellenas/`. El pipeline
 usa ese modelo si existe y, si no, el de `outputs/trocr_placas/`.
+
+### Placas colombianas
+
+Con `USAR_COLOMBIANAS = True` (valor por defecto), `TrOCR_Placas.ipynb` añade las
+placas de `data/ocr_vehicles/new_plates/plates-ocr-train` (repositorio
+[jdbravo/plates-ocr-train](https://gitlab.com/jdbravo/plates-ocr-train): recortes
+de placas colombianas con `train_annotations.csv` y `valid_annotations.csv`).
+Pasa las etiquetas a mayúsculas, descarta las que no siguen el formato
+colombiano (`AAA000` en coches, `AAA00A` en motos), deja en entrenamiento las
+placas que el repositorio repite entre `train` y `valid` y reparte el resto de
+`valid` entre validación y test. Cada placa colombiana aparece dos veces por
+época (`COLOMBIA_REPEAT`). El modelo se guarda con el sufijo `_colombia`
+(`outputs/trocr_placas_rellenas_colombia`), el pipeline lo usa si existe, y la
+evaluación final da las métricas por fuente.
 
 ## Pipeline completo: placa + OCR
 
@@ -245,6 +275,49 @@ docker compose down
 Puedes cambiar el puerto creando un archivo `.env` con `JUPYTER_PORT=8889`.
 `env.yml` define las dependencias de Conda/Python; `.env` configura Compose.
 El puerto de Jupyter solo se publica en la interfaz local.
+
+### Límite de recursos
+
+Para no saturar ni calentar el equipo, el contenedor usa como máximo ~60 % del
+anfitrión (i7-14700KF con 28 hilos y 64 GB): **16 CPU y 38 GB de RAM**, sin
+swap adicional. Los hilos de PyTorch, NumPy y OpenCV se ajustan al mismo número
+de CPU. Para cambiarlo, añade a `.env` (CPU en número entero):
+
+```bash
+CONTAINER_CPUS=12
+CONTAINER_MEMORY=24g
+```
+
+Los límites se aplican al crear el contenedor, así que tras cambiarlos hay que
+recrearlo (`docker compose ... up -d --force-recreate`). Para comprobarlos
+mientras entrena: `docker stats`.
+
+Docker Desktop ejecuta los contenedores dentro de una máquina virtual WSL2 que,
+por defecto, puede usar todas las CPU y el 50 % de la RAM. Si quieres limitar
+también esa máquina (por ejemplo, para otros contenedores), crea
+`%USERPROFILE%\.wslconfig` con este contenido y ejecuta `wsl --shutdown`:
+
+```ini
+[wsl2]
+processors=16
+memory=38GB
+```
+
+Docker no puede limitar la GPU: el límite se aplica en Windows y afecta a todo el
+equipo. `scripts/limitar_gpu.ps1` fija la frecuencia máxima de la GPU al 70 % de
+la de fábrica (2163 de 3090 MHz en la RTX 5060 Ti), que es lo que más reduce
+consumo y temperatura, y su consumo máximo al mínimo que admite (150 W de
+180 W). Pide permisos de administrador y los ajustes se pierden al reiniciar
+Windows, así que hay que ejecutarlo antes de cada sesión de entrenamiento:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\limitar_gpu.ps1                 # 70 %
+powershell -ExecutionPolicy Bypass -File scripts\limitar_gpu.ps1 -Porcentaje 60
+powershell -ExecutionPolicy Bypass -File scripts\limitar_gpu.ps1 -Quitar         # valores de fábrica
+```
+
+Para vigilarla mientras entrena:
+`nvidia-smi --query-gpu=clocks.gr,power.draw,temperature.gpu --format=csv -l 5`.
 
 Para usar las mismas dependencias fuera de Docker (Linux x86_64):
 
