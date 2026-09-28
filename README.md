@@ -206,6 +206,22 @@ checkpoints en `outputs/trocr_placas/checkpoints` y el mejor modelo en
 con las placas reducidas a 100 px. Si falta memoria de GPU, usa batch 8 con
 `gradient_accumulation_steps=2`.
 
+La última celda exporta el OCR a TFLite (LiteRT) con
+`scripts/exportar_ocr_tflite.py`, que se ejecuta con el Python del entorno
+`detr` (`litert-torch` no es compatible con el entorno de TrOCR). TrOCR genera
+el texto token a token, así que el `.tflite` tiene dos firmas: `encoder`
+(`pixel_values` → características) y `decoder` (`input_ids` int32 `[1, 16]` +
+características → `logits`); el bucle de lectura (voraz, sin caché) va fuera del
+modelo. En `outputs/<modelo>/tflite/` quedan `trocr_placas.tflite` (float32,
+~1,5 GB), `trocr_placas_int8.tflite` (pesos int8, ~400 MB), `vocabulario.json` y
+`config_tflite.json`. La celda compara las lecturas de PyTorch y de los dos
+`.tflite` en placas de test. El script también se puede usar directamente:
+
+```bash
+docker compose exec trocr micromamba run -n detr python scripts/exportar_ocr_tflite.py \
+    outputs/trocr_placas_rellenas_colombia/final
+```
+
 ### Placas sin anonimizar (rellenadas)
 
 `notebooks/Rellenar_UC3M-LP.ipynb` (kernel **Python (TrOCR)**) sustituye los
@@ -265,6 +281,22 @@ entorno `detr`; en un contenedor ya levantado se puede instalar sin reconstruir:
 ```bash
 docker compose exec trocr micromamba run -n detr pip install "fast-plate-ocr[onnx]==1.1.0"
 ```
+
+## Pipeline con los modelos TFLite
+
+`notebooks/Pipeline_TFLite.ipynb` (kernel **Python (RF-DETR)**) prueba los dos
+modelos exportados como en una aplicación: solo NumPy, PIL y el intérprete de
+LiteRT, sin PyTorch. Carga los `.tflite` y muestra sus firmas, ejecuta el
+pipeline completo (detección, recorte y lectura token a token) sobre
+`data/vehicles` con tiempos por modelo, mide el OCR con las placas colombianas de
+`valid` que no están en `train` y compara detecciones y lecturas con los modelos
+originales de PyTorch. Usa el OCR con pesos int8 (`OCR_VARIANTE`) y guarda las
+imágenes anotadas y las lecturas en `outputs/pipeline_tflite/`.
+
+`docs/PIPELINE_TFLITE_KMP.md` describe cómo integrar los dos `.tflite` en una app
+Kotlin Multiplatform: ficheros a empaquetar (con tamaños y SHA-256), tensores de
+entrada y salida, preprocesado y postprocesado exactos, bucle de lectura del OCR,
+formato del resultado y pruebas con los valores esperados.
 
 ## Parar y configurar
 
