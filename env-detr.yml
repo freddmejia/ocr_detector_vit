@@ -21,8 +21,9 @@ dependencies:
       - albumentations==2.0.8
       # Visualización de las etapas del pipeline (cuaderno Pipeline_Placas_OCR).
       - matplotlib==3.11.2
-      # OCR de placas preentrenado (+65 países) para comparar en el pipeline; ONNX Runtime en CPU.
-      - fast-plate-ocr[onnx]==1.1.0
+      # OCR de placas (+65 países): inferencia ONNX en CPU y, con [train], ajuste fino y exportación a TFLite
+      # (FastPlateOCR_Placas.ipynb). [train] incluye Keras 3 y TensorFlow (este solo para exportar, en CPU).
+      - fast-plate-ocr[train,onnx]==1.1.0
       # Exportación de RF-DETR a TFLite (PyTorch -> LiteRT sin TensorFlow). litert-torch 0.9.0 es la última
       # versión que no exige torchao >= 0.17, incompatible con PyTorch 2.7; torchao 0.12 sí lo es.
       - litert-torch==0.9.0

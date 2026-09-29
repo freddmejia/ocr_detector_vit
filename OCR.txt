@@ -46,3 +46,11 @@ docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 
 
 al final hay que saber como se leen los datos imágenes/textos que arquitectura se usa, que librerías se usa, porque con mas imágenes funciono mejor, que métricas, porque luego es simplemente usar y nos olvidamos o no entendemos el problema de como se construyo y cuando hayan realmente problemas, como lo resolvemos siempre vamos a estar dependiendo de IA que resuelva todo? no es posible por eso es necesario entender todo, absolutamente todo
+
+
+
+ahora que me he pegado con Claude y he revisado documentación, los modelos pequenios para el móvil va mucho mejor que los que tienen grande parámetros, lo cuál me lleva a
+conclusiones:
+a. mientras menos datos tengas, el modelo escógelo más pequenio, trata de hacer transferlearning + finetunning
+b. si tienes más datos pruebas con modelos medianos o grandes
+1. bajan los parámetros, bajan el size de los datos?

@@ -253,6 +253,23 @@ placas que el repositorio repite entre `train` y `valid` y reparte el resto de
 (`outputs/trocr_placas_rellenas_colombia`), el pipeline lo usa si existe, y la
 evaluación final da las métricas por fuente.
 
+## OCR con fast-plate-ocr
+
+`notebooks/FastPlateOCR_Placas.ipynb` (kernel **Python (RF-DETR)**) sigue el
+[tutorial de ajuste fino](https://github.com/ankandrew/fast-plate-ocr/blob/master/examples/tutorial_fine_tune_plate_model.ipynb)
+de [fast-plate-ocr](https://github.com/ankandrew/fast-plate-ocr) con todas las
+placas: las españolas de `UC3M-LP_ocr_rellenas` (recortadas con el margen del
+pipeline) y las colombianas, con los mismos repartos que `TrOCR_Placas.ipynb`.
+Parte de `cct_s_v2_global` (sin cabeza de país), entrena con Keras sobre PyTorch
+(GPU), mide el modelo preentrenado y el ajustado en test por fuente y exporta a
+TFLite (~1,6 MB, pesos int8) y ONNX en `outputs/fast_plate_ocr/export/`, junto
+con su `plate_config.yaml`. El tamaño de entrada se elige con `IMG_SIZE` (por
+defecto 96×192; el modelo base es de 64×128 y se adapta interpolando sus
+*embeddings* de posición). El TFLite recibe la placa recortada como
+`float32 [1, alto, ancho, 3]` RGB (0–255) y devuelve `[1, 10, 37]`: la probabilidad
+de cada carácter (`0-9A-Z` y `_` de relleno) en cada posición. El dataset
+generado queda en `data/ocr_vehicles/fast_plate_ocr/`.
+
 ## Pipeline completo: placa + OCR
 
 `notebooks/Pipeline_Placas_OCR.ipynb` (kernel **Python (RF-DETR)**) une los dos
