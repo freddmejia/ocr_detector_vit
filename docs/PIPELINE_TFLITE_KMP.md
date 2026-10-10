@@ -1,5 +1,10 @@
 # Lectura de placas con TFLite en una app Kotlin Multiplatform
 
+> **Referencia histórica.** Esta guía describe el pipeline anterior con RF-DETR
+> Medium y TrOCR. El proyecto ha elegido RF-DETR Nano y FastPlateOCR, y los modelos
+> de TrOCR se han eliminado durante la limpieza. Los contratos, tamaños y rutas
+> siguientes deberán actualizarse antes de usarlos para la nueva aplicación.
+
 Guía de integración para implementar, en una app KMP (Android e iOS), el pipeline de lectura de matrículas con los dos
 modelos TFLite (LiteRT) exportados en este proyecto:
 

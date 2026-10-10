@@ -42,7 +42,9 @@ al final podemos juntar muchas categorías de cosas en imágenes o una sola para
 
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 
-
+1. modelo detector más pequenio, con más datos para fine tunning para aumentar el acc, iou, dice, que sea más rápido 6ms como el de yolo
+2. ocr igual, más pequenio
+3. en algunos móviles Android o ios va a ir más lento dependiendo de las capacidades del CPU ram
 
 
 al final hay que saber como se leen los datos imágenes/textos que arquitectura se usa, que librerías se usa, porque con mas imágenes funciono mejor, que métricas, porque luego es simplemente usar y nos olvidamos o no entendemos el problema de como se construyo y cuando hayan realmente problemas, como lo resolvemos siempre vamos a estar dependiendo de IA que resuelva todo? no es posible por eso es necesario entender todo, absolutamente todo
