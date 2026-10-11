@@ -9,7 +9,7 @@ móvil. El flujo previsto es: foto -> detector -> recorte de la placa -> OCR -> 
 | Cuaderno | Función | Kernel |
 |---|---|---|
 | `notebooks/RFDETR_License_Plates.ipynb` | Ajuste fino del detector y exportación a TFLite | Python (RF-DETR) |
-| `notebooks/FastPlateOCR_Placas.ipynb` | Preparación del dataset OCR, ajuste fino, evaluación y exportación a TFLite/ONNX | Python (RF-DETR) |
+| `notebooks/FastPlateOCR_Placas.ipynb` | Tutorial oficial de fast-plate-ocr con funciones Python en vez de CLI: dataset de Colombia, ajuste fino y exportación a TFLite/ONNX | Python (RF-DETR) |
 | `notebooks/Rellenar_UC3M-LP.ipynb` | Sustituir bloques anonimizados por caracteres sintéticos y generar sus etiquetas | Python (TrOCR) |
 | `notebooks/Pipeline_Placas_OCR.ipynb` | Pipeline por etapas: RF-DETR en PyTorch y FastPlateOCR en ONNX | Python (RF-DETR) |
 | `notebooks/Pipeline_TFLite.ipynb` | Pipeline RF-DETR + FastPlateOCR con LiteRT y comparación con PyTorch/ONNX | Python (RF-DETR) |
@@ -37,11 +37,11 @@ Se mantienen los valores de entrenamiento y las transformaciones existentes:
   precisión BF16, aumentos, checkpoints y exportaciones. `RESUME_FROM_CHECKPOINT`
   permite reanudar; `OVERWRITE_EXPORT=True` regenera el TFLite tras reentrenar en
   el mismo directorio. Se ha unificado la exportación duplicada.
-- **FastPlateOCR:** directorios, tamaño de entrada, repetición de Colombia,
-  épocas, paciencia, batch, workers, learning rate, weight decay y aumentos.
-  `RUN_TRAINING=False` permite usar una ejecución existente elegida con
-  `SELECTED_RUN_DIR`. `WEIGHTS_OVERRIDE` carga pesos iniciales; no restaura el
-  estado del optimizador. `RUN_EXPORT` controla la exportación.
+- **FastPlateOCR:** backend de Keras, directorios, modelo base y los
+  hiperparámetros del tutorial (épocas, batch, learning rate, weight decay,
+  label smoothing). Los valores por defecto del CLI `train` están en la celda
+  de la sección *Train*. Para exportar una ejecución anterior sin reentrenar,
+  asigna su carpeta a `RUN_DIR`.
 - **Rellenado:** rutas, margen, tamaño máximo, semilla, partición de validación,
   umbrales de localización y tamaño del banco de caracteres. La generación no
   depende de ejecutar la celda de ejemplos.
@@ -64,7 +64,8 @@ data/
 |   |-- UC3M-LP_ocr_rellenas/    # recortes españoles y etiquetas sintéticas
 |   |-- new_plates/
 |   |   |-- plates-ocr-train/   # placas colombianas y anotaciones
-|   |-- fast_plate_ocr/         # dataset preparado para FastPlateOCR
+|   |-- fast_plate_ocr/         # dataset combinado anterior (ya no lo usa el cuaderno)
+|   |-- colombia_dataset/       # dataset del tutorial, descargado por FastPlateOCR_Placas
 |-- vehicles/                  # nueve imágenes para probar el pipeline
 ```
 
@@ -85,11 +86,15 @@ en el disco del anfitrión.
    [jdbravo/plates-ocr-train](https://gitlab.com/jdbravo/plates-ocr-train), en
    `new_plates/plates-ocr-train/`, con `train_annotations.csv`,
    `valid_annotations.csv` y sus imágenes.
-4. `FastPlateOCR_Placas.ipynb` prepara `fast_plate_ocr/`, recortando las españolas
-   con un margen horizontal del 8 % y vertical del 15 %, y copiando las
-   colombianas. Las anotaciones usan `image_path` y `plate_text`.
+4. `FastPlateOCR_Placas.ipynb` sigue el tutorial oficial: descarga
+   `colombia_dataset_example.zip` de la release de fast-plate-ocr en
+   `colombia_dataset/` y entrena con sus `train_annotations.csv` y
+   `valid_annotations.csv`. Las anotaciones usan `image_path` y `plate_text`.
+   La sección *Using other datasets* del cuaderno explica cómo añadir otros.
 
-El dataset preparado contiene:
+La versión anterior del cuaderno preparaba `fast_plate_ocr/`, que combina las
+españolas (recortadas con un margen horizontal del 8 % y vertical del 15 %) y
+las colombianas:
 
 | Fuente | Entrenamiento, sin repetir | Validación | Prueba |
 |---|---:|---:|---:|
@@ -171,25 +176,26 @@ coincidan con la configuración del procesador.
 
 ### FastPlateOCR
 
-El modelo base es `cct_s_v2_global`. Se ajusta con Keras sobre PyTorch y se
-exporta con TensorFlow en CPU. La lectura produce diez posiciones sobre el
-alfabeto `0-9A-Z_`; `_` es relleno. La entrada es RGB float32 en formato NHWC,
-con valores 0-255 y normalización dentro del modelo.
+El modelo base es `cct_xs_v2_global` (~580 000 parámetros), con entrada
+**64x128**, la de su configuración original. Por defecto, el cuaderno entrena y
+exporta con el backend TensorFlow en CPU, como el tutorial. La lectura produce
+diez posiciones sobre el alfabeto `0-9A-Z_`; `_` es relleno. La entrada TFLite
+es RGB float32 en formato NHWC, con valores 0-255 y normalización dentro del
+modelo; la ONNX es uint8.
 
 ```text
 outputs/fast_plate_ocr/
-|-- base/
-|-- trained/                    # ejecuciones, best.keras y métricas
+|-- base/                       # .keras y configuraciones descargadas
+|-- trained/                    # una carpeta por ejecución: best.keras, last.keras, configs y training_log.csv
 |-- export/
-    |-- plate_ocr.tflite         # ~1,60 MB
-    |-- plate_ocr.onnx           # ~4,92 MB
+    |-- plate_ocr.tflite         # ~0,94 MB
+    |-- plate_ocr.onnx           # ~3,08 MB
     |-- plate_config.yaml
 ```
 
-El cuaderno está configurado a **96x192**, pero la exportación existente y su
-`plate_config.yaml` corresponden al entrenamiento a **64x128**. Para usar un
-modelo exportado, hay que tomar el tamaño de su configuración, no del valor
-actual del cuaderno.
+Las exportaciones anteriores (`cct_s_v2_global`) se sobrescriben al ejecutar la
+sección *Export the model*. Usa siempre cada modelo con el `plate_config.yaml`
+exportado junto a él.
 
 ## Recursos del equipo
 
